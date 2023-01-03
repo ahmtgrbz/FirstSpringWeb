@@ -1,156 +1,59 @@
 package com.garanti.FirstSpringWeb.repo;
 
-
-
-import com.garanti.FirstSpringWeb.Constants;
 import com.garanti.FirstSpringWeb.model.Ders;
+import lombok.AllArgsConstructor;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Repository;
 
-import java.sql.*;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+@Repository
+@AllArgsConstructor
 public class DersRepo {
 
-    public ArrayList<Ders> getAll() {
-        ArrayList<Ders> liste = new ArrayList<>();
-        Connection connection = null;
-        Statement stmt = null;
-        ResultSet result = null;
-        try {
-            connection = Constants.getConnection();
-            stmt = connection.createStatement();
-            result = stmt.executeQuery("select * from BILGE.DERS");
-            while (result.next()) {
-                Ders temp = new Ders(result.getInt("ID"), result.getInt("OGR_ID"), result.getInt("KONU_ID"));
-                liste.add(temp);
-            }
-        } catch (Exception e) {
-            liste.clear();
-            System.err.println(e.getMessage());
-        } finally {
-            try {
-                result.close();
-                stmt.close();
-                connection.close();
-            } catch (SQLException e) {
-                // throw new mybussinessexception()
-            }
-        }
-        return liste;
+    private JdbcTemplate jdbcTemplate;
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    public List<Ders> getAll() {
+        return jdbcTemplate.query("select * from BILGE.DERS", BeanPropertyRowMapper.newInstance(Ders.class));
     }
 
     public Ders getById(int id) {
         Ders ders = null;
-        Connection connection = null;
-        PreparedStatement stmt = null;
-        ResultSet result = null;
-        try {
-            connection = Constants.getConnection();
-            stmt = connection.prepareStatement("select * from BILGE.DERS where ID = ?");
-            stmt.setInt(1, id);
-            result = stmt.executeQuery();
-            while (result.next()) {
-                ders = new Ders(result.getInt("ID"), result.getInt("OGR_ID"), result.getInt("KONU_ID"));
-            }
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-        } finally {
-            try {
-                result.close();
-                stmt.close();
-                connection.close();
-            } catch (SQLException e) {
-                // throw new mybussinessexception()
-            }
-        }
+        String sql = "select * from BILGE.DERS where ID = :ID";
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("ID", id);
+        ders = namedParameterJdbcTemplate.queryForObject(sql, paramMap, BeanPropertyRowMapper.newInstance(Ders.class));
         return ders;
     }
 
     public boolean save(Ders ders) {
-        boolean result = false;
-        Connection connection = null;
-        PreparedStatement stmt = null;
 
-        try {
-            connection = Constants.getConnection();
-            stmt = connection.prepareStatement("Insert Into BILGE.DERS (OGR_ID,KONU_ID) values (?,?)");
-            stmt.setInt(1, ders.getOGR_ID());
-            stmt.setInt(2, ders.getKONU_ID());
-            result = stmt.executeUpdate() == 1;
-
-        } catch (SQLException e) {
-            System.err.println("->" + e.getClass().getName());
-            System.err.println(e.getMessage());
-        } catch (Exception e) {
-            /*
-            catch (PSQLException e)
-        {
-            if (e.getServerErrorMessage() != null)
-            {
-                System.err.println(e.getServerErrorMessage().getSchema());
-                System.err.println(e.getServerErrorMessage().getConstraint());
-                System.err.println(e.getServerErrorMessage().getHint());
-                System.err.println(e.getServerErrorMessage().getTable());
-                System.err.println(e.getServerErrorMessage().getSQLState());
-                System.err.println(e.getServerErrorMessage().getSeverity());
-                System.err.println(e.getServerErrorMessage().getRoutine());
-                System.err.println(e.getServerErrorMessage().getPosition());
-                System.err.println(e.getServerErrorMessage().getInternalQuery());
-                System.err.println(e.getServerErrorMessage().getColumn());
-                System.err.println(e.getServerErrorMessage().getWhere());
-                System.err.println(e.getServerErrorMessage().getFile());
-                System.err.println(e.getServerErrorMessage().getDetail());
-                System.err.println(e.getServerErrorMessage().getMessage());
-            }
-            else
-            {
-                System.err.println("PSQL -> " + e.getLocalizedMessage());
-            }
-        }
-        catch (SQLException e)
-        {
-            System.err.println("SQL -> " + e.getMessage());
-        }
-        catch (Exception e)
-        {
-            System.err.println("EXC -> " + e.getMessage());
-        }
-            * */
-
-            System.err.println(e.getMessage());
-        } finally {
-            try {
-                stmt.close();
-                connection.close();
-            } catch (SQLException e) {
-                // throw new mybussinessexception()
-            }
-        }
-        return result;
+        String sql = "Insert Into BILGE.DERS (OGR_ID,KONU_ID) (:OGRID,:KONUID)";
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("OGRID", ders.getOGR_ID());
+        paramMap.put("KONUID", ders.getKONU_ID());
+        return namedParameterJdbcTemplate.update(sql, paramMap) == 1;
 
     }
 
     public boolean deleteById(int id) {
 
-        boolean result = false;
-        Connection connection = null;
-        PreparedStatement stmt = null;
+        String sql = "delete from BILGE.DERS where ID = :ID";
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("ID", id);
+        return namedParameterJdbcTemplate.update(sql, paramMap) == 1;
 
-        try {
-            connection = Constants.getConnection();
-            stmt = connection.prepareStatement("delete from BILGE.DERS where ID = ?");
-            stmt.setInt(1, id);
-            result = stmt.executeUpdate() == 1;
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-        } finally {
-            try {
-                stmt.close();
-                connection.close();
-            } catch (SQLException e) {
-                // throw new mybussinessexception()
-            }
-        }
-        return result;
+    }
 
+    public List<Ders> getAllLike(int konuId) {
+        String sql = "select * from BILGE.DERS where KONU_ID = :KONUID";
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("KONUID", konuId);
+        return namedParameterJdbcTemplate.query(sql, paramMap, BeanPropertyRowMapper.newInstance(Ders.class));
     }
 }

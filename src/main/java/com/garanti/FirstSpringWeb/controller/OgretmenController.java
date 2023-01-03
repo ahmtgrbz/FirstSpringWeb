@@ -2,71 +2,93 @@ package com.garanti.FirstSpringWeb.controller;
 
 import com.garanti.FirstSpringWeb.model.Ogretmen;
 import com.garanti.FirstSpringWeb.repo.OgretmenRepo;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping(path = "ogretmen")
-public class OgretmenController{
-
+public class OgretmenController {
     private OgretmenRepo repo;
-    public OgretmenController() {
-        this.repo = new OgretmenRepo();
+
+    public OgretmenController(OgretmenRepo repo) {
+        this.repo = repo;
     }
 
-    //Arraylisti json array olarak geri veriyor. GetAll için yazdığımız metod.
-    @GetMapping(value = "getAll",produces = MediaType.APPLICATION_JSON_VALUE)
-    public ArrayList<Ogretmen> getAll() {
-        return repo.getAll();
+    @GetMapping(value = "findAllByName", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Ogretmen>> findAllByName(@RequestParam(value = "name", required = true) String name) {
+        return ResponseEntity.ok(this.repo.getAllLike(name));
     }
 
-    //queryParam anotasyonu ile yaptım.
-    @GetMapping(value = "getById",produces = MediaType.APPLICATION_JSON_VALUE)
-    public Ogretmen getByIdQueryParam(@RequestParam(value = "id") Integer id) {
-        return repo.getById(id);
+    @GetMapping(value = "getAll", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Ogretmen>> getAll() {
+        List<Ogretmen> res = repo.getAll();
+        if (res == null || res.size() == 0) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        } else {
+            return ResponseEntity.ok(res);
+        }
     }
 
-    //PathParam anotasyonu ile yaptık.
-    @GetMapping(value = "getById/{id}",produces = MediaType.APPLICATION_JSON_VALUE)
-    public Ogretmen getByIdPathParam(@PathVariable(value = "id") Integer id) {
-        return repo.getById(id);
+    @GetMapping(value = "getById", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Ogretmen> getByIdQueryParam(@RequestParam(value = "id") Integer id) {
+        Ogretmen res = repo.getById(id);
+        if (res != null) {
+            return ResponseEntity.ok(res);
+        } else {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
     }
 
-    @GetMapping(value = "getByIdHeader",produces = MediaType.APPLICATION_JSON_VALUE)
-    public Ogretmen getByIdHeader(@RequestHeader(value = "id") Integer id) {
-        return repo.getById(id);
+    @GetMapping(value = "getById/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Ogretmen> getByIdPathParam(@PathVariable(value = "id") Integer id) {
+        Ogretmen res = repo.getById(id);
+        if (res != null) {
+            return ResponseEntity.ok(res);
+        } else {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+    }
+
+    @GetMapping(value = "getByIdHeader", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Ogretmen> getByIdHeader(@RequestHeader(value = "id") Integer id) {
+        Ogretmen res = repo.getById(id);
+        if (res != null) {
+            return ResponseEntity.ok(res);
+        } else {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
     }
 
     @DeleteMapping(value = "deleteById/{id}")
-    public String deleteById(@PathVariable(value = "id") Integer id) {
-
+    public ResponseEntity<String> deleteById(@PathVariable(value = "id") Integer id) {
         if (repo.deleteById(id)) {
-            return "Başarı ile silindi.";
+            return ResponseEntity.ok("Başarı ile silindi.");
         } else {
-            return "Silme başarısız.";
+            return ResponseEntity.internalServerError().body("Silme başarısız.");
         }
     }
 
     @DeleteMapping(value = "deleteByIdHeader")
-    public String deleteByHeader(@RequestHeader(value = "id") Integer id) {
+    public ResponseEntity<String> deleteByHeader(@RequestHeader(value = "id") Integer id) {
 
         if (repo.deleteById(id)) {
-            return "Başarı ile silindi.";
+            return ResponseEntity.ok("Başarı ile silindi.");
         } else {
-            return "Silme başarısız.";
+            return ResponseEntity.internalServerError().body("Silme başarısız.");
         }
     }
 
     // ResponseEntity
-    @PostMapping(value = "save",consumes = MediaType.APPLICATION_JSON_VALUE)
-    public String save(@RequestBody Ogretmen ogretmen) {
+    @PostMapping(value = "save", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> save(@RequestBody Ogretmen ogretmen) {
         if (repo.save(ogretmen)) {
-            return "Başarı ile kaydedildi.";
+            return ResponseEntity.status(HttpStatus.CREATED).body("Basarı ile kaydedildi");
         } else {
-            return "Kayıt başarısız.";
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Kayıt Başarısız");
         }
     }
 }
